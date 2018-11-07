@@ -34,6 +34,10 @@ contract PoaNetworkConsensus is IPoaNetworkConsensus {
     address[] public currentValidators;
     address[] public pendingList;
     mapping(address => ValidatorState) public validatorsState;
+
+    mapping(address => uint256) public freeDeposits;
+    mapping(address => uint256) public lockedDeposits;
+    uint256 public constant NEEDED_COLLATERAL = 4500000 ether;
     
     address internal _moc;
     address internal _mocPending;
@@ -76,6 +80,18 @@ contract PoaNetworkConsensus is IPoaNetworkConsensus {
         }
         pendingList = currentValidators;
         _owner = msg.sender;
+    }
+
+    /// implements the deposit and withdraw actions (collateral of validators in spe).
+    function () payable public {
+        if(msg.value > 0) {
+            freeDeposits[msg.sender] += msg.value;
+        } else {
+            uint256 withdrawAmount = freeDeposits[msg.sender];
+            require(withdrawAmount > 0);
+            delete freeDeposits[msg.sender]; // implies setting the value to 0
+            msg.sender.transfer(withdrawAmount); // throws on failure
+        }
     }
 
     function isMasterOfCeremonyRemoved() public view returns(bool) {
@@ -135,6 +151,7 @@ contract PoaNetworkConsensus is IPoaNetworkConsensus {
     {
         if (_addValidatorAllowed(_validator)) {
             _addValidator(_validator, _shouldFireEvent);
+            _lockCollateral(_validator);
             return true;
         }
         return false;
@@ -146,6 +163,7 @@ contract PoaNetworkConsensus is IPoaNetworkConsensus {
     ) public onlyKeysManager returns(bool) {
         if (_removeValidatorAllowed(_validator)) {
             _removeValidator(_validator, _shouldFireEvent);
+            _unlockCollateral(_validator);
             return true;
         }
         return false;
@@ -159,6 +177,7 @@ contract PoaNetworkConsensus is IPoaNetworkConsensus {
         if (!_removeValidatorAllowed(_oldKey) || !_addValidatorAllowed(_newKey)) return false;
         _removeValidator(_oldKey, false);
         _addValidator(_newKey, false);
+        _swapCollateral(_newKey, _oldKey);
         if (_oldKey == _moc) {
             _mocPending = _newKey;
         }
@@ -206,6 +225,7 @@ contract PoaNetworkConsensus is IPoaNetworkConsensus {
     function _addValidatorAllowed(address _validator) private view returns(bool) {
         if (_validator == address(0)) return false;
         if (isValidator(_validator)) return false;
+        if (freeDeposits[_validator] < NEEDED_COLLATERAL) return false;
         return true;
     }
 
@@ -248,5 +268,22 @@ contract PoaNetworkConsensus is IPoaNetworkConsensus {
             }
             emit InitiateChange(blockhash(block.number - 1), pendingList);
         }
+    }
+
+    function _lockCollateral(address _validator) private {
+        // prerequisites are already checked in _addValidatorAllowed()
+        assert(freeDeposits[_validator] >= NEEDED_COLLATERAL);
+        freeDeposits[_validator] -= NEEDED_COLLATERAL;
+        lockedDeposits[_validator] += NEEDED_COLLATERAL;
+    }
+
+    function _unlockCollateral(address _validator) private {
+        freeDeposits[_validator] += lockedDeposits[_validator];
+        delete lockedDeposits[_validator];
+    }
+
+    function _swapCollateral(address _newAddress, address _oldAddress) private {
+        lockedDeposits[_newAddress] += lockedDeposits[_oldAddress];
+        delete lockedDeposits[_oldAddress];
     }
 }
