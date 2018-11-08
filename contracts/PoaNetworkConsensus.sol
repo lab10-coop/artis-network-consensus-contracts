@@ -95,6 +95,13 @@ contract PoaNetworkConsensus is IPoaNetworkConsensus {
         }
     }
 
+    /// allows to deposit funds for a validator in spe from another address
+    function depositFor(address _validator) payable public {
+        require(_validator != address(0));
+        require(msg.value > 0);
+        freeDeposits[_validator] += msg.value;
+    }
+
     function isMasterOfCeremonyRemoved() public view returns(bool) {
         return _isMoCRemoved;
     }
