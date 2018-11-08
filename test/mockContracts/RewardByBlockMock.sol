@@ -20,4 +20,9 @@ contract RewardByBlockMock is RewardByBlock {
     function setSystemAddress(address _address) public {
         addressStorage[keccak256("systemAddress")] = _address;
     }
+
+
+    function emissionFundsActivationTimestamp() public pure returns(uint) {
+        return 0; // always active
+    }
 }

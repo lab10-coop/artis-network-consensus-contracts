@@ -21,9 +21,14 @@ contract RewardByBlock is EternalStorage, IRewardByBlock {
     bytes32 internal constant MINTED_IN_BLOCK = "mintedInBlock";
     bytes32 internal constant MINTED_TOTALLY_BY_BRIDGE = "mintedTotallyByBridge";
 
+    bytes32 internal constant BLOCK_REWARD_OVERRIDE = "blockRewardOverride";
+    bytes32 internal constant BLOCK_REWARD_OVERRIDE_FOR_ACCOUNT = "blockRewardOverrideForAccount";
+
     // solhint-disable const-name-snakecase
     // These values must be changed before deploy
-    uint256 public constant blockRewardAmount = 1 ether; 
+    // default block reward - can be overridden
+    uint256 public constant blockRewardAmount = 1 ether;
+    // only once the emissionFunds is activated. Before it's 0
     uint256 public constant emissionFundsAmount = 1 ether;
     address public constant emissionFunds = 0x0000000000000000000000000000000000000000;
     uint256 public constant bridgesAllowedLength = 3;
@@ -34,6 +39,11 @@ contract RewardByBlock is EternalStorage, IRewardByBlock {
 
     modifier onlyBridgeContract {
         require(_isBridgeContract(msg.sender));
+        _;
+    }
+
+    modifier onlyKeysManager() {
+        require(msg.sender == getKeysManager());
         _;
     }
 
@@ -57,6 +67,28 @@ contract RewardByBlock is EternalStorage, IRewardByBlock {
         emit AddedReceiver(_amount, _receiver, msg.sender);
     }
 
+    /// allows to set the block reward for validators (miners) to a lower amount.
+    /// set to 0 in order to disable the override
+    function setBlockRewardOverride(uint256 _amount)
+        public
+        onlyKeysManager
+    {
+        require(_amount < blockRewardAmount);
+        _setBlockRewardOverride(_amount);
+    }
+
+    /// allows to set the block reward for a specific validator (miner) to a lower amount
+    /// takes precedence over the generic override
+    /// set to 0 in order to disable the override
+    function setBlockRewardOverrideForAccount(address _account, uint256 _amount)
+        public
+        onlyKeysManager
+    {
+        require(_amount < blockRewardAmount);
+        _setBlockRewardOverrideForAccount(_account, _amount);
+    }
+
+
     function reward(address[] benefactors, uint16[] kind)
         external
         onlySystem
@@ -76,9 +108,9 @@ contract RewardByBlock is EternalStorage, IRewardByBlock {
         uint256[] memory rewards = new uint256[](receivers.length);
 
         receivers[0] = _getPayoutByMining(miningKey);
-        rewards[0] = blockRewardAmount;
+        rewards[0] = getBlockRewardAmountForAccount(miningKey);
         receivers[1] = emissionFunds;
-        rewards[1] = emissionFundsAmount;
+        rewards[1] = getEmissionFundsAmount();
 
         uint256 i;
         
@@ -118,6 +150,10 @@ contract RewardByBlock is EternalStorage, IRewardByBlock {
             address(0x0000000000000000000000000000000000000000),
             address(0x0000000000000000000000000000000000000000)
         ]);
+    }
+
+    function emissionFundsActivationTimestamp() public pure returns(uint) {
+        return 1573732800; // 14. Nov 2019
     }
 
     function bridgeAmount(address _bridge) public view returns(uint256) {
@@ -178,6 +214,37 @@ contract RewardByBlock is EternalStorage, IRewardByBlock {
 
     function proxyStorage() public view returns(address) {
         return addressStorage[PROXY_STORAGE];
+    }
+
+    function getKeysManager() public view returns(address) {
+        return IProxyStorage(proxyStorage()).getKeysManager();
+    }
+
+    /// get the currently active block reward amount for the given account
+    function getBlockRewardAmountForAccount(address _account) public view returns(uint256) {
+        uint256 specificOverride = uintStorage[
+            keccak256(abi.encode(BLOCK_REWARD_OVERRIDE_FOR_ACCOUNT, _account))
+        ];
+        if(specificOverride != 0) {
+            return specificOverride;
+        } else {
+            uint256 genericOverride = uintStorage[
+                keccak256(abi.encode(BLOCK_REWARD_OVERRIDE))
+            ];
+            if(genericOverride != 0) {
+                return genericOverride;
+            }
+        }
+        return blockRewardAmount;
+    }
+
+    /// get the currently active amount for the emissionFunds
+    /// returns 0 if not yet active
+    function getEmissionFundsAmount() public view returns(uint256) {
+        if(block.timestamp >= emissionFundsActivationTimestamp()) {
+            return emissionFundsAmount;
+        }
+        return 0;
     }
 
     function _addExtraReceiver(address _receiver) private {
@@ -254,5 +321,21 @@ contract RewardByBlock is EternalStorage, IRewardByBlock {
 
         hash = MINTED_TOTALLY;
         uintStorage[hash] = uintStorage[hash].add(_amount);
+    }
+
+    function _setBlockRewardOverride(uint256 _amount) private {
+        if(_amount == 0) {
+            delete uintStorage[keccak256(abi.encode(BLOCK_REWARD_OVERRIDE))];
+        } else {
+            uintStorage[keccak256(abi.encode(BLOCK_REWARD_OVERRIDE))] = _amount;
+        }
+    }
+
+    function _setBlockRewardOverrideForAccount(address _account, uint256 _amount) private {
+        if(_amount == 0) {
+            delete uintStorage[keccak256(abi.encode(BLOCK_REWARD_OVERRIDE_FOR_ACCOUNT, _account))];
+        } else {
+            uintStorage[keccak256(abi.encode(BLOCK_REWARD_OVERRIDE_FOR_ACCOUNT, _account))] = _amount;
+        }
     }
 }
