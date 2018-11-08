@@ -10,7 +10,8 @@ contract PoaNetworkConsensusMock is PoaNetworkConsensus {
         address[] validators
     ) PoaNetworkConsensus(
         _moc,
-        validators
+        validators,
+        0
     ) public {
     }
 

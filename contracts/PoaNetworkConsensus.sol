@@ -37,7 +37,7 @@ contract PoaNetworkConsensus is IPoaNetworkConsensus {
 
     mapping(address => uint256) public freeDeposits;
     mapping(address => uint256) public lockedDeposits;
-    uint256 public constant NEEDED_COLLATERAL = 4500000 ether;
+    uint256 public neededCollateral;
     
     address internal _moc;
     address internal _mocPending;
@@ -59,11 +59,12 @@ contract PoaNetworkConsensus is IPoaNetworkConsensus {
         _;
     }
 
-    constructor(address _masterOfCeremony, address[] validators) public {
+    constructor(address _masterOfCeremony, address[] validators, uint256 _neededCollateral) public {
         // TODO: When you deploy this contract, make sure you hardcode items below
         // Make sure you have those addresses defined in spec.json
         require(_masterOfCeremony != address(0));
         _moc = _masterOfCeremony;
+        neededCollateral = _neededCollateral;
         currentValidators = [_masterOfCeremony];
         for (uint256 y = 0; y < validators.length; y++) {
             require(validators[y] != address(0));
@@ -225,7 +226,7 @@ contract PoaNetworkConsensus is IPoaNetworkConsensus {
     function _addValidatorAllowed(address _validator) private view returns(bool) {
         if (_validator == address(0)) return false;
         if (isValidator(_validator)) return false;
-        if (freeDeposits[_validator] < NEEDED_COLLATERAL) return false;
+        if (freeDeposits[_validator] < neededCollateral) return false;
         return true;
     }
 
@@ -272,9 +273,9 @@ contract PoaNetworkConsensus is IPoaNetworkConsensus {
 
     function _lockCollateral(address _validator) private {
         // prerequisites are already checked in _addValidatorAllowed()
-        assert(freeDeposits[_validator] >= NEEDED_COLLATERAL);
-        freeDeposits[_validator] -= NEEDED_COLLATERAL;
-        lockedDeposits[_validator] += NEEDED_COLLATERAL;
+        assert(freeDeposits[_validator] >= neededCollateral);
+        freeDeposits[_validator] -= neededCollateral;
+        lockedDeposits[_validator] += neededCollateral;
     }
 
     function _unlockCollateral(address _validator) private {
