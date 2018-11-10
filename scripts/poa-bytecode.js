@@ -18,7 +18,7 @@ async function main() {
 	let bytecode = compiled.contracts[':PoaNetworkConsensus'].bytecode;
 	
 	const contract = new web3.eth.Contract(abi);
-	const deploy = await contract.deploy({data: '0x' + bytecode, arguments: [process.env.MASTER_OF_CEREMONY, []]});
+	const deploy = await contract.deploy({data: '0x' + bytecode, arguments: [process.env.MASTER_OF_CEREMONY, [], 4500000 * 1E18]});
 	bytecode = await deploy.encodeABI();
 	
 	console.log('PoaNetworkConsensus bytecode:');
