@@ -18,7 +18,7 @@ async function main() {
 	let bytecode = compiled.contracts[':PoaNetworkConsensus'].bytecode;
 	
 	const contract = new web3.eth.Contract(abi);
-	const collateral_size = new BigNumber('4500000000000000000000000');
+	const collateral_size = web3.utils.toBN('4500000000000000000000000').toString();
 	const deploy = await contract.deploy({data: '0x' + bytecode, arguments: [process.env.MASTER_OF_CEREMONY, [], collateral_size]});
 	bytecode = await deploy.encodeABI();
 	
