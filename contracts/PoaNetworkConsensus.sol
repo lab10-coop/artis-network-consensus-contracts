@@ -202,6 +202,18 @@ contract PoaNetworkConsensus is IPoaNetworkConsensus {
         emit MoCInitializedProxyStorage(proxyStorage);
     }
 
+    /// confiscate a given amount of collateral and transfer it to the given address
+    function confiscateCollateral(address _validator, address _target, uint256 _amount)
+        public
+        onlyKeysManager
+    {
+        // disallow confiscation after leaving the validator set, before fetching the collateral
+        require(isValidator(_validator));
+        require(lockedDeposits[_validator] >= _amount);
+        lockedDeposits[_validator] -= _amount;
+        _target.transfer(_amount);
+    }
+
     function isValidator(address _someone) public view returns(bool) {
         return validatorsState[_someone].isValidator;
     }
