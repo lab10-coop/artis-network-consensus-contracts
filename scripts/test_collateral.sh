@@ -1,0 +1,1 @@
+node_modules/.bin/truffle test test/poa_network_collateral_tests.js test/mockContracts/ProxyStorageMock.sol --network test
