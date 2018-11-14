@@ -1,0 +1,1 @@
+node_modules/.bin/truffle test test/reward_by_block_dynamic_test.js test/mockContracts/PoaNetworkConsensusMock.sol test/mockContracts/ProxyStorageMock.sol test/mockContracts/RewardByBlockMock.sol --network test
