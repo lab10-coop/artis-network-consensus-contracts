@@ -21,7 +21,7 @@ async function main() {
 	const deploy = await contract.deploy({data: '0x' + bytecode, arguments: []});
 	bytecode = await deploy.encodeABI();
 	
-	console.log('PoaNetworkConsensus bytecode:');
+	console.log('RewardByBlock bytecode:');
 	console.log('');
 	console.log(bytecode);
 }
