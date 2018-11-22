@@ -3,7 +3,7 @@ module.exports = {
   // to customize your Truffle configuration!
   networks: {
     tau1: {
-      host: "tau1.artis.network",
+      host: "localhost",
       port: 8545,
       gas: 6600000,
       network_id: "0x03C401"
