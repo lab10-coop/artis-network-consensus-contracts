@@ -6,6 +6,7 @@
  */
 
 const fs = require('fs');
+const moment = require('moment');
 const solc = require('solc');
 const PoaNetworkConsensus = artifacts.require("./PoaNetworkConsensus.sol");
 const ProxyStorage = artifacts.require("./ProxyStorage.sol");
@@ -29,6 +30,7 @@ module.exports = function(deployer, network, accounts) {
   if (network === 'tau1') {
     let masterOfCeremony;
     let poaNetworkConsensusAddress = process.env.POA_NETWORK_CONSENSUS_ADDRESS;
+    let previousKeysManager = process.env.OLD_KEYSMANAGER || "0x0000000000000000000000000000000000000000";
     let poaNetworkConsensus, emissionFunds;
     let proxyStorage, proxyStorageImplAddress;
     let keysManager, keysManagerImplAddress;
@@ -73,7 +75,7 @@ module.exports = function(deployer, network, accounts) {
 
       // keep only the first 2 validators (+ moc = 3)
       // side effect: consumed "initial keys" are gone (since the KeysManager stays the same)
-      poaNetworkConsensus = await PoaNetworkConsensus.new(masterOfCeremony, validators.slice(0, 2), neededCollateral);
+      poaNetworkConsensus = await PoaNetworkConsensus.new(masterOfCeremony, []/*validators.slice(0, 2)*/, neededCollateral);
       console.log(`created new consensus at ${poaNetworkConsensus.address}`);
       poaNetworkConsensusAddress = poaNetworkConsensus.address;
 
@@ -101,11 +103,13 @@ module.exports = function(deployer, network, accounts) {
         proxyStorage.address,
         keysManagerImplAddress
       );
+      console.log(`KeysManager Data deployed at ${keysManager.address}`);
       keysManager = KeysManager.at(keysManager.address);
       await keysManager.init(previousKeysManager);
 
       // Deploy BallotsStorage
       ballotsStorage = await BallotsStorage.new();
+      console.log(`BallotsStorage Data deployed at ${ballotsStorage.address}`);
       ballotsStorageImplAddress = ballotsStorage.address;
       ballotsStorage = await EternalStorageProxy.new(
         proxyStorage.address,
@@ -117,6 +121,7 @@ module.exports = function(deployer, network, accounts) {
 
       // Deploy ValidatorMetadata
       validatorMetadata = await ValidatorMetadata.new();
+      console.log(`ValidatorMetadata Data deployed at ${validatorMetadata.address}`);
       validatorMetadataImplAddress = validatorMetadata.address;
       validatorMetadata = await EternalStorageProxy.new(
         proxyStorage.address,
@@ -126,6 +131,7 @@ module.exports = function(deployer, network, accounts) {
 
       // Deploy VotingToChangeKeys
       votingToChangeKeys = await VotingToChangeKeys.new();
+      console.log(`VotingToChangeKeys Data deployed at ${votingToChangeKeys.address}`);
       votingToChangeKeysImplAddress = votingToChangeKeys.address;
       votingToChangeKeys = await EternalStorageProxy.new(
         proxyStorage.address,
@@ -142,10 +148,11 @@ module.exports = function(deployer, network, accounts) {
         proxyStorage.address,
         votingToChangeMinThresholdImplAddress
       );
+      console.log(`VotingToChangeMinThreshold Data deployed at ${votingToChangeMinThreshold.address}`);
       votingToChangeMinThreshold = VotingToChangeMinThreshold.at(
         votingToChangeMinThreshold.address
       );
-      await votingToChangeMinThreshold.init(2);
+      await votingToChangeMinThreshold.init(minBallotDuration, 2);
       await votingToChangeMinThreshold.migrateDisable();
 
       // Deploy VotingToChangeProxyAddress
@@ -155,6 +162,7 @@ module.exports = function(deployer, network, accounts) {
         proxyStorage.address,
         votingToChangeProxyAddressImplAddress
       );
+      console.log(`VotingToChangeProxyAddress Data deployed at ${votingToChangeProxyAddress.address}`);
       votingToChangeProxyAddress = VotingToChangeProxyAddress.at(
         votingToChangeProxyAddress.address
       );
@@ -168,6 +176,7 @@ module.exports = function(deployer, network, accounts) {
         proxyStorage.address,
         votingToManageEmissionFundsImplAddress
       );
+      console.log(`VotingToManageEmissionFunds Data deployed at ${votingToManageEmissionFunds.address}`);
       votingToManageEmissionFunds = VotingToManageEmissionFunds.at(
         votingToManageEmissionFunds.address
       );
@@ -191,6 +200,7 @@ module.exports = function(deployer, network, accounts) {
         proxyStorage.address,
         rewardByBlockImplAddress
       );
+      console.log(`RewardByBlock Data deployed at ${rewardByBlock.address}`);
       const rewardByBlockInstance = rewardByBlockImpl.at(rewardByBlock.address);
       const emissionFundsAddress = await rewardByBlockInstance.emissionFunds.call();
 
