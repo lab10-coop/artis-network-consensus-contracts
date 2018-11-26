@@ -234,7 +234,7 @@ module.exports = function(deployer, network, accounts) {
           "MOC": masterOfCeremony
         };
 
-        fs.writeFileSync('./contracts_3.json', JSON.stringify(contracts, null, 2));
+        fs.writeFileSync('./contracts_4.json', JSON.stringify(contracts, null, 2));
       }
 
       console.log(
