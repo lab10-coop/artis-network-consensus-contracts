@@ -20,7 +20,7 @@ const getWeb3Latest = () => {
 }
 
 module.exports = function(deployer, network, accounts) {
-  if (network === 'sokol') {
+  if (network === 'sokol' || network === 'tau1') {
     let masterOfCeremony = process.env.MASTER_OF_CEREMONY;
     let poaNetworkConsensusAddress = process.env.POA_NETWORK_CONSENSUS_ADDRESS;
     let previousKeysManager = process.env.OLD_KEYSMANAGER || "0x0000000000000000000000000000000000000000";
