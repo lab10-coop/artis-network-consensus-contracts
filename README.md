@@ -13,6 +13,15 @@ ARTIS specific changes were limited to the introduction of a collateral requirem
 - [PoA Consensus Audit](https://github.com/poanetwork/poa-network-consensus-contracts/blob/master/audit/MixBytes/PoA%20Consensus%20Audit.pdf) by MixBytes
 - [PoA Consensus Audit](https://github.com/poanetwork/poa-network-consensus-contracts/blob/master/audit/ChainSecurity/ChainSecurity_PoA.pdf) by ChainSecurity
 
+## Run tests
+
+Use node.js v8.
+
+- `npm ci`
+- `npm test`
+
+The test script builds the contracts, starts an instance of [ganache-cli](https://github.com/trufflesuite/ganache-cli) in the background and then executes all tests (takes a while).
+
 ## Start a network
 
 New networks are bootstrapped by a _Master of Ceremony_.  
