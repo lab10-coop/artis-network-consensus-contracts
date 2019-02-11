@@ -3,7 +3,7 @@ const ProxyStorage = artifacts.require('./mockContracts/ProxyStorageMock');
 const EternalStorageProxy = artifacts.require('./EternalStorageProxy');
 const KeysManager = artifacts.require('./KeysManager');
 const ValidatorMetadata = artifacts.require('./ValidatorMetadata');
-const RewardByBlock = artifacts.require('./mockContracts/RewardByBlockMock');
+const RewardByBlock = artifacts.require('./mockContracts/RewardByBlockMockWithActivationTimestamp');
 
 require('chai')
   .use(require('chai-as-promised'))
