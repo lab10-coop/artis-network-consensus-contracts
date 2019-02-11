@@ -6,19 +6,19 @@ import "./interfaces/IProxyStorage.sol";
 
 contract PoaNetworkConsensus is IPoaNetworkConsensus {
     /// Issue this log event to signal a desired change in validator set.
-    /// This will not lead to a change in active validator set until 
+    /// This will not lead to a change in active validator set until
     /// finalizeChange is called.
     ///
     /// Only the last log event of any block can take effect.
     /// If a signal is issued while another is being finalized it may never
     /// take effect.
-    /// 
+    ///
     /// parentHash here should be the parent block hash, or the
     /// signal will not be recognized.
     event InitiateChange(bytes32 indexed parentHash, address[] newSet);
     event ChangeFinalized(address[] newSet);
     event MoCInitializedProxyStorage(address proxyStorage);
-    
+
     struct ValidatorState {
         // Is this a validator.
         bool isValidator;
@@ -27,10 +27,10 @@ contract PoaNetworkConsensus is IPoaNetworkConsensus {
         // Index in the currentValidators.
         uint256 index;
     }
-    
+
     IProxyStorage public proxyStorage;
     address public systemAddress = 0xffffFFFfFFffffffffffffffFfFFFfffFFFfFFfE;
-    
+
     address[] public currentValidators;
     address[] public pendingList;
     mapping(address => ValidatorState) public validatorsState;
@@ -38,7 +38,7 @@ contract PoaNetworkConsensus is IPoaNetworkConsensus {
     mapping(address => uint256) public freeDeposits;
     mapping(address => uint256) public lockedDeposits;
     uint256 public neededCollateral;
-    
+
     address internal _moc;
     address internal _mocPending;
     address internal _owner;
@@ -127,7 +127,7 @@ contract PoaNetworkConsensus is IPoaNetworkConsensus {
         return pendingList;
     }
 
-    /// Called when an initiated change reaches finality and is activated. 
+    /// Called when an initiated change reaches finality and is activated.
     /// Only valid when msg.sender == SUPER_USER (EIP96, 2**160 - 2)
     ///
     /// Also called when the contract is first enabled for consensus. In this case,
@@ -157,7 +157,7 @@ contract PoaNetworkConsensus is IPoaNetworkConsensus {
         onlyKeysManager
         returns(bool)
     {
-        if (_addValidatorAllowed(_validator)) {
+        if (_addValidatorAllowed(_validator, true)) {
             _addValidator(_validator, _shouldFireEvent);
             _lockCollateral(_validator);
             return true;
@@ -182,7 +182,7 @@ contract PoaNetworkConsensus is IPoaNetworkConsensus {
         onlyKeysManager
         returns(bool)
     {
-        if (!_removeValidatorAllowed(_oldKey) || !_addValidatorAllowed(_newKey)) return false;
+        if (!_removeValidatorAllowed(_oldKey) || !_addValidatorAllowed(_newKey, false)) return false;
         _removeValidator(_oldKey, false);
         _addValidator(_newKey, false);
         _swapCollateral(_newKey, _oldKey);
@@ -242,10 +242,12 @@ contract PoaNetworkConsensus is IPoaNetworkConsensus {
         return currentValidators.length - 1; // exclude MoC
     }
 
-    function _addValidatorAllowed(address _validator) private view returns(bool) {
+    function _addValidatorAllowed(address _validator, bool checkCollateral) private view returns(bool) {
         if (_validator == address(0)) return false;
         if (isValidator(_validator)) return false;
-        if (freeDeposits[_validator] < neededCollateral) return false;
+        if(checkCollateral) {
+            if (freeDeposits[_validator] < neededCollateral) return false;
+        }
         return true;
     }
 
