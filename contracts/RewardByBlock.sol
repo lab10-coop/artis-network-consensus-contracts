@@ -118,7 +118,7 @@ contract RewardByBlock is EternalStorage, IRewardByBlock {
         rewards[1] = getEmissionFundsAmount();
 
         uint256 i;
-        
+
         for (i = 0; i < extraLength; i++) {
             address extraAddress = extraReceiverByIndex(i);
             uint256 extraAmount = extraReceiverAmount(extraAddress);
@@ -144,7 +144,7 @@ contract RewardByBlock is EternalStorage, IRewardByBlock {
         _clearExtraReceivers();
 
         emit Rewarded(receivers, rewards);
-    
+
         return (receivers, rewards);
     }
 
@@ -155,10 +155,6 @@ contract RewardByBlock is EternalStorage, IRewardByBlock {
             address(0x0000000000000000000000000000000000000000),
             address(0x0000000000000000000000000000000000000000)
         ]);
-    }
-
-    function emissionFundsActivationTimestamp() public pure returns(uint) {
-        return 1573732800; // 14. Nov 2019
     }
 
     function bridgeAmount(address _bridge) public view returns(uint256) {
@@ -245,10 +241,7 @@ contract RewardByBlock is EternalStorage, IRewardByBlock {
 
     /// get the currently active amount for the emissionFunds
     /// returns 0 if not yet active
-    function getEmissionFundsAmount() public view returns(uint256) {
-        if(block.timestamp >= emissionFundsActivationTimestamp()) {
-            return emissionFundsAmount;
-        }
+    function getEmissionFundsAmount() public pure returns(uint256) {
         return 0;
     }
 
@@ -279,7 +272,7 @@ contract RewardByBlock is EternalStorage, IRewardByBlock {
 
     function _isBridgeContract(address _addr) private pure returns(bool) {
         address[bridgesAllowedLength] memory bridges = bridgesAllowed();
-        
+
         for (uint256 i = 0; i < bridges.length; i++) {
             if (_addr == bridges[i]) {
                 return true;
