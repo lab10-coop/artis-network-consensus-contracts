@@ -158,7 +158,7 @@ contract RewardByBlock is EternalStorage, IRewardByBlock {
     }
 
     function emissionFundsActivationTimestamp() public pure returns(uint) {
-        return 1573732800; // 14. Nov 2019
+        return ~uint(0); // never
     }
 
     function bridgeAmount(address _bridge) public view returns(uint256) {
